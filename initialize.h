@@ -1,4 +1,5 @@
 #ifndef INITIALIZE_H
+#define INITIALIZE_H
 
 // GigE camera packet size
 #define PACKET_SIZE 1500

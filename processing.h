@@ -1,4 +1,5 @@
 #ifndef PROCESSING_H
+#define PROCESSING_H
 
 // Given column (X) and row (Y) coordinates of a 2D array gives the equivalent index of the array in row-major form
 #define WRAP(X, Y, sizeX) ((Y)*(sizeX) + (X))
