@@ -10,6 +10,15 @@
     Y = (index)/(sizeX); \
     X = ((index)-(Y))
 
-int getBeamProperties(const unsigned char *imgBuf, int sizeX, int sizeY, int *xBrightest, int *yBrightest, int *xAverage, int *yAverage);
+struct beamProperties {
+	int xMax;
+	int yMax;
+	int xAvg;
+	int yAvg;
+	int xStd;
+	int yStd;
+};
+
+int getBeamProperties(const unsigned char *imgBuf, int sizeX, int sizeY, struct beamProperties *p);
 
 #endif
