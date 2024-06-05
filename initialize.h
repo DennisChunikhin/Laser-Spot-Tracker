@@ -9,7 +9,9 @@
 
 void printErrorAndExit(GENAPIC_RESULT errc);
 
-void initializeDevice(PYLON_DEVICE_HANDLE hDev); // Opens the device and sets up its configurations
+char *getFirstDevice(PYLON_DEVICE_HANDLE *hDev); // Gets and opens the first device, returns the device name
+
+void initializeDevice(PYLON_DEVICE_HANDLE hDev, int64_t *sizeX, int64_t *sizeY); // Sets up the device configurations
 
 int getPayloadSize(PYLON_DEVICE_HANDLE hDev, int *payloadSize); // Gets the size of the image buffer by temporarily opening a stream grabber
 

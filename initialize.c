@@ -14,18 +14,78 @@ void printErrorAndExit( GENAPIC_RESULT errc ) {
     fprintf(stderr, "%s\n", errMsg);
 
     free(errMsg);
+    
+    GenApiGetLastErrorDetail( NULL, &length );
+    errMsg = (char *) malloc(length);
+    GenApiGetLastErrorDetail( errMsg, &length );
+    
+    fprintf(stderr, "%s\n", errMsg);
+    
+    free(errMsg);
 
     PylonTerminate();
     exit( EXIT_FAILURE );
 }
 
-void initializeDevice(PYLON_DEVICE_HANDLE hDev) {
+// Get first device and return the device name
+char *getFirstDevice(PYLON_DEVICE_HANDLE *hDev) {
     GENAPIC_RESULT res;
     
-    // Open the device
-    res = PylonDeviceOpen( hDev, PYLONC_ACCESS_MODE_CONTROL | PYLONC_ACCESS_MODE_STREAM );
+    // Number of devices
+    int numDevices;
+    
+    res = PylonEnumerateDevices(&numDevices);
     CHECK(res);
+    if (numDevices == 0) {
+        fprintf( stderr, "No devices found!\n" );
 
+        PylonTerminate();
+        exit( EXIT_FAILURE );
+    }
+    
+    // Get first device
+    res = PylonCreateDeviceByIndex( 0, hDev );
+    CHECK(res);
+    
+    // Open the device
+    res = PylonDeviceOpen( *hDev, PYLONC_ACCESS_MODE_CONTROL | PYLONC_ACCESS_MODE_STREAM );
+    CHECK(res);
+    
+    // Get the name of the device
+    char *buf;
+    if (PylonDeviceFeatureIsReadable(*hDev, "DeviceModelName")) {
+        size_t siz;
+        
+        // Allocate memory for name string
+        res = PylonDeviceFeatureToString(*hDev, "DeviceModelName", NULL, &siz);
+        CHECK(res);
+        buf = (char *)malloc(sizeof(char)*siz);
+        if (buf == NULL) {
+            fprintf(stderr, "Out of memory!\n");
+            PylonTerminate();
+            exit(EXIT_FAILURE);
+        }
+        
+        // Get name string
+        res = PylonDeviceFeatureToString(*hDev, "DeviceModelName", buf, &siz);
+        CHECK(res);
+    } else {
+        // Empty name string
+        buf = (char *)malloc(sizeof(char));
+        if (buf == NULL) {
+            fprintf(stderr, "Out of memory!\n");
+            PylonTerminate();
+            exit(EXIT_FAILURE);
+        }
+        buf[0] = '\0';
+    }
+    
+    return buf;
+}
+
+void initializeDevice(PYLON_DEVICE_HANDLE hDev, int64_t *sizeX, int64_t *sizeY) {
+    GENAPIC_RESULT res;
+    
     /* DEVICE CONFIGURATIONS */
     
     // Set the pixel format to Mono12 if available
@@ -67,6 +127,28 @@ void initializeDevice(PYLON_DEVICE_HANDLE hDev) {
         res = PylonDeviceSetIntegerFeature(hDev, "GevSCPSPacketSize", PACKET_SIZE);
         CHECK(res);
     }
+    
+    // Use continuous frame acquisition mode
+    res = PylonDeviceFeatureFromString(hDev, "AcquisitionMode", "Continuous");
+    CHECK(res);
+    
+    // Get camera width and height
+    if (PylonDeviceFeatureIsReadable(hDev, "Width")) {
+        res = PylonDeviceGetIntegerFeatureMax(hDev, "Width", sizeX);
+        CHECK(res);
+        if (PylonDeviceFeatureIsWritable(hDev, "Width")) {
+            res = PylonDeviceSetIntegerFeature(hDev, "Width", *sizeX);
+            CHECK(res);
+        }
+    } else *sizeX = 0;
+    if (PylonDeviceFeatureIsReadable(hDev, "Height")) {
+        res = PylonDeviceGetIntegerFeatureMax(hDev, "Height", sizeY);
+        CHECK(res);
+        if (PylonDeviceFeatureIsWritable(hDev, "Width")) {
+            res = PylonDeviceSetIntegerFeature(hDev, "Height", *sizeY);
+            CHECK(res);
+        }
+    } else *sizeY = 0;
 }
 
 int getPayloadSize(PYLON_DEVICE_HANDLE hDev, int *payloadSize) {
