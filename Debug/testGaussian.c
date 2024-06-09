@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     getBeamProperties(gaussian, SIZEX, SIZEY, &p);
     
     // TODO: How to properly store Mono12 (can't in unsigned char--only 1 byte)
-    printf("Max: (%4u, %4u)\n", p.xMax, p.yMax); // This looks good
+    printf("Max: (%4u, %4u)\n", p.xMax, p.yMax);
     printf("Avg: (%4.2f, %4.2f)\n", p.xAvg, p.yAvg);
     printf("Std: (%4.2f, %4.2f)\n", p.xStd, p.yStd);
     
