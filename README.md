@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Laser Spot Tracker
 An application for tracking a laser spot using a Basler camera.
 

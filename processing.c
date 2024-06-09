@@ -2,7 +2,6 @@
 #include <math.h>
 #include "processing.h"
 
-#define MAX_INTENSITY 255
 
 int getBeamProperties(const unsigned char *imgBuf, long long int sizeX, long long int sizeY, struct beamProperties *p) {
     // Brightest pixel

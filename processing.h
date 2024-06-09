@@ -18,6 +18,7 @@ struct beamProperties {
     double yStd;
 };
 
+
 int getBeamProperties(const unsigned char *imgBuf, long long int sizeX, long long int sizeY, struct beamProperties *p);
 
 #endif
