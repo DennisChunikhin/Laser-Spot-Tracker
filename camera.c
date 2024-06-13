@@ -120,6 +120,10 @@ int main(int argc, char *argv[]) {
     
     //res = PylonImageWindowCreate(0, 0, 0, 1000, 1000);
     
+    // Open Data File
+    FILE *dataFile;
+    setupDataFile(dataFile);
+    
     // Grab images
     for (int i=0; i < 20; i++) {
         size_t bufferIndex;
@@ -151,9 +155,10 @@ int main(int argc, char *argv[]) {
             
             // Process Image
             getBeamProperties(buffer, sizeX, sizeY, beamProps);
-            printf("Frame %d; Brightest: (%4u, %4u); Mean: (%4.4f, %4.4f); Std: (%4.4f, %4.4f)\n", i, beamProps->xMax, beamProps->yMax, beamProps->xAvg, beamProps->yAvg, beamProps->xStd, beamProps->yStd);
+            //printf("Frame %d; Brightest: (%4u, %4u); Mean: (%4.4f, %4.4f); Std: (%4.4f, %4.4f)\n", i, beamProps->xMax, beamProps->yMax, beamProps->xAvg, beamProps->yAvg, beamProps->xStd, beamProps->yStd);
             
-            // TODO: Write Data
+            // Write Beam Data
+            writeData(fp, beamProps);
             
             res = PylonImageWindowDisplayImageGrabResult(0, &grabResult);
             CHECK(res);
@@ -169,6 +174,8 @@ int main(int argc, char *argv[]) {
     
     
     /* Clean up */
+
+    fclose(dataFile);
     
     // Stop Grabbing Images
     res = PylonDeviceExecuteCommandFeature(hDev, "AcquisitionStop");
@@ -211,4 +218,49 @@ int main(int argc, char *argv[]) {
     
     puts("Goodbye!");
     return 0;
+}
+
+// Set up and open a file to store acquired data
+void setupDataFile(FILE *fp) {
+    // Set file name to current time
+    time_t rawtime;
+    struct tm *timeinfo;
+
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    char fname[34] = "Data/";
+    strcat(fname, asctime(timeinfo));
+    fname[18] = '-';
+    fname[21] = '-';
+    fname[29] = '.';
+    fname[30] = 't';
+    fname[31] = 'x';
+    fname[32] = 't';
+    fname[33] = '\0';
+
+    CreateDirectory("Data", NULL);
+
+    FILE *fp = fopen(fname, "a");
+    if (fp == NULL) {
+        fprintf(stderr, "Could not create a data file, exiting.");
+        exit(EXIT_FAILURE);
+    }
+
+    // Write Header
+    fprintf(dataFile, "xMax yMax xMean yMean xStd yStd\n");
+}
+
+void writeData(FILE *fp, const beamProperties *p) {
+    int res;
+
+    if( fprintf(fp, "%u %u %f %f %f %f\n", p->xMax, p->yMax, p->xAvg, p->yAvg, p->xStd, p->yStd) < 0 ) {
+        // Failed Write
+        fprintf(stderr, "Failed to write to write to data file, creating new data file.");
+
+        fclose(fp);
+        setupDataFile(fp);
+
+        writeData(fp, p);
+    }
 }
