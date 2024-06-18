@@ -1,16 +1,21 @@
 #include <stdio.h>
 #include <malloc.h>
+
 #include <pylonc/PylonC.h>
 #include "initialize.h"
 #include "processing.h"
 
 #include <windows.h>
+#include <time.h>
 
 // TODO: Make debug fakecamera.c which generates a random array
 // The size of the camera image is 2592 x 1944
 
 #define NUM_BUFFERS 5 // Decrease if having memory issues, increase if frames dropping
 #define TIMEOUT 1000 // ms to wait for image before timing out
+
+FILE *setupDataFile();
+void writeData(FILE *fp, const struct beamProperties *p);
 
 int main(int argc, char *argv[]) {
     GENAPIC_RESULT res; // Return value of pylon methods
@@ -121,11 +126,10 @@ int main(int argc, char *argv[]) {
     //res = PylonImageWindowCreate(0, 0, 0, 1000, 1000);
     
     // Open Data File
-    FILE *dataFile;
-    setupDataFile(dataFile);
+    FILE *dataFile = setupDataFile();
     
     // Grab images
-    for (int i=0; i < 20; i++) {
+    for (int i=0; i < 200; i++) {
         size_t bufferIndex;
         
         res = PylonWaitObjectWait(hWait, TIMEOUT, &isReady);
@@ -158,7 +162,7 @@ int main(int argc, char *argv[]) {
             //printf("Frame %d; Brightest: (%4u, %4u); Mean: (%4.4f, %4.4f); Std: (%4.4f, %4.4f)\n", i, beamProps->xMax, beamProps->yMax, beamProps->xAvg, beamProps->yAvg, beamProps->xStd, beamProps->yStd);
             
             // Write Beam Data
-            writeData(fp, beamProps);
+            writeData(dataFile, beamProps);
             
             res = PylonImageWindowDisplayImageGrabResult(0, &grabResult);
             CHECK(res);
@@ -221,7 +225,7 @@ int main(int argc, char *argv[]) {
 }
 
 // Set up and open a file to store acquired data
-void setupDataFile(FILE *fp) {
+FILE *setupDataFile() {
     // Set file name to current time
     time_t rawtime;
     struct tm *timeinfo;
@@ -248,10 +252,12 @@ void setupDataFile(FILE *fp) {
     }
 
     // Write Header
-    fprintf(dataFile, "xMax yMax xMean yMean xStd yStd\n");
+    fprintf(fp, "xMax yMax xMean yMean xStd yStd\n");
+    
+    return fp;
 }
 
-void writeData(FILE *fp, const beamProperties *p) {
+void writeData(FILE *fp, const struct beamProperties *p) {
     int res;
 
     if( fprintf(fp, "%u %u %f %f %f %f\n", p->xMax, p->yMax, p->xAvg, p->yAvg, p->xStd, p->yStd) < 0 ) {
@@ -259,7 +265,7 @@ void writeData(FILE *fp, const beamProperties *p) {
         fprintf(stderr, "Failed to write to write to data file, creating new data file.");
 
         fclose(fp);
-        setupDataFile(fp);
+        fp = setupDataFile(fp); // Check that this is fine
 
         writeData(fp, p);
     }
