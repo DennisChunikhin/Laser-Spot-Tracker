@@ -13,6 +13,6 @@ char *getFirstDevice(PYLON_DEVICE_HANDLE *hDev); // Gets and opens the first dev
 
 void initializeDevice(PYLON_DEVICE_HANDLE hDev, int64_t *sizeX, int64_t *sizeY); // Sets up the device configurations
 
-int getPayloadSize(PYLON_DEVICE_HANDLE hDev, int *payloadSize); // Gets the size of the image buffer by temporarily opening a stream grabber
+//int getPayloadSize(PYLON_DEVICE_HANDLE hDev, size_t *payloadSize); // Gets the size of the image buffer by temporarily opening a stream grabber
 
 #endif

@@ -1,27 +1,30 @@
 #include <stdio.h>
 #include <malloc.h>
 
-#include <pylonc/PylonC.h>
-#include "initialize.h"
-#include "processing.h"
+#include <gtk/gtk.h>
 
 #include <windows.h>
 #include <time.h>
 
+#include <pylonc/PylonC.h>
+
+#include "initialize.h"
+#include "processing.h"
+#include "camera.h"
+
+
 // TODO: Make debug fakecamera.c which generates a random array
 // The size of the camera image is 2592 x 1944
 
-#define NUM_BUFFERS 5 // Decrease if having memory issues, increase if frames dropping
-#define TIMEOUT 1000 // ms to wait for image before timing out
+// TODO: Replace exits with g_task_return_error()
 
-FILE *setupDataFile();
-void writeData(FILE *fp, const struct beamProperties *p);
-
-int main(int argc, char *argv[]) {
+void camera(GTask *task, gpointer source_obj, gpointer _task_data, GCancellable *cancellable) {
     GENAPIC_RESULT res; // Return value of pylon methods
     
+    struct TaskData *task_data = _task_data;
+
     // Pylon handles
-    PYLON_DEVICE_HANDLE hDev; // Handle for a pylon device
+    PYLON_DEVICE_HANDLE hDev = task_data->hDev; // Handle for a pylon device
     PYLON_STREAMGRABBER_HANDLE hGrabber;
     PYLON_WAITOBJECT_HANDLE hWait;
     
@@ -35,15 +38,14 @@ int main(int argc, char *argv[]) {
     
     puts("Hello!");
     
+    /* Setup  Camera */
     
-    /* Setup */
-    
-    PylonInitialize();
+    //PylonInitialize();
 
     // Get first device
-    char *name = getFirstDevice(&hDev);
-    printf("Using camera %s\n", name);
-    free(name);
+    //char *name = getFirstDevice(&hDev);
+    //printf("Using camera %s\n", name);
+    //free(name);
     
     // Initialize the device
     initializeDevice(hDev, &sizeX, &sizeY);
@@ -91,7 +93,7 @@ int main(int argc, char *argv[]) {
     res = PylonStreamGrabberSetMaxBufferSize(hGrabber, payloadSize);
     CHECK(res);
     
-    // ALlocate the resources required for grabbing
+    // Allocate the resources required for grabbing
     res = PylonStreamGrabberPrepareGrab(hGrabber);
     CHECK(res);
     
@@ -129,7 +131,9 @@ int main(int argc, char *argv[]) {
     FILE *dataFile = setupDataFile();
     
     // Grab images
-    for (int i=0; i < 200; i++) {
+    //for (int i=0; i < 100; i++) {
+    int i=0;
+    while (!g_cancellable_is_cancelled(cancellable)) {
         size_t bufferIndex;
         
         res = PylonWaitObjectWait(hWait, TIMEOUT, &isReady);
@@ -164,8 +168,13 @@ int main(int argc, char *argv[]) {
             // Write Beam Data
             writeData(dataFile, beamProps);
             
+	    // Display Image
             res = PylonImageWindowDisplayImageGrabResult(0, &grabResult);
             CHECK(res);
+	    
+	    GBytes *bytes = mono8_to_rgb_bytes(buffer, sizeX, sizeY);
+	    GdkMemoryTexture *texture = gdk_memory_texture_new(sizeX, sizeY, GDK_MEMORY_R8G8B8, bytes, sizeX*BYTES_PER_R8G8B8);
+	    gtk_picture_set_paintable(task_data->image_window, GDK_PAINTABLE(texture));
         }
         else if (grabResult.Status == Failed) {
             fprintf(stderr, "Frame %d was not grabbed successfully. Error code = 0x%08X\n", i, grabResult.ErrorCode);
@@ -175,7 +184,7 @@ int main(int argc, char *argv[]) {
         res = PylonStreamGrabberQueueBuffer(hGrabber, grabResult.hBuffer, (void *)bufferIndex);
         CHECK(res);
     }
-    
+
     
     /* Clean up */
 
@@ -213,15 +222,14 @@ int main(int argc, char *argv[]) {
     free(beamProps);
     
     // Close and release the pylon device
-    res = PylonDeviceClose(hDev);
-    CHECK(res);
-    res = PylonDestroyDevice(hDev);
-    CHECK(res);
+    //res = PylonDeviceClose(hDev);
+    //CHECK(res);
+    //res = PylonDestroyDevice(hDev);
+    //CHECK(res);
 
-    PylonTerminate();
+    //PylonTerminate();
     
-    puts("Goodbye!");
-    return 0;
+    //puts("Goodbye!");
 }
 
 // Set up and open a file to store acquired data
@@ -265,8 +273,22 @@ void writeData(FILE *fp, const struct beamProperties *p) {
         fprintf(stderr, "Failed to write to write to data file, creating new data file.");
 
         fclose(fp);
-        fp = setupDataFile(fp); // Check that this is fine
+        fp = setupDataFile(fp); // TODO: Check that this is fine
 
         writeData(fp, p);
     }
+}
+
+GBytes *mono8_to_rgb_bytes(unsigned char *data, int width, int height) {
+	GByteArray *pixels = g_byte_array_new();
+
+	for (int row = 0; row < height; row ++) {
+		for (int col = 0; col < width; col++) {
+			g_byte_array_append(pixels, data, 1); // R
+			g_byte_array_append(pixels, data, 1); // G
+			g_byte_array_append(pixels, data++, 1); // B
+		}
+	}
+
+	return g_byte_array_free_to_bytes(pixels);
 }

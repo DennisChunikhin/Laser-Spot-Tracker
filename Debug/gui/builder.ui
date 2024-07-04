@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+	<object id="window" class="GtkWindow">
+		<property name="title">Grid</property>
+		<child><object id="grid" class="GtkGrid">
+			<child><object id="start_acquisition" class="GtkButton">
+				<property name="label">Start Acquisition</property>
+				<layout>
+					<property name="column">0</property>
+					<property name="row">0</property>
+				</layout>
+			</object></child>
+			<child><object id="stop_acquisition" class="GtkButton">
+				<property name="label">Stop Acquisition</property>
+				<layout>
+					<property name="column">1</property>
+					<property name="row">0</property>
+				</layout>
+			</object></child>
+			<child><object id="cam_session_box" class="GtkBox">
+				<layout>
+					<property name="column">0</property>
+					<property name="row">1</property>
+					<property name="column-span">2</property>
+				</layout>
+			</object></child>
+		</object></child>
+	</object>
+</interface>

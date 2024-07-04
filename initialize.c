@@ -23,6 +23,9 @@ void printErrorAndExit( GENAPIC_RESULT errc ) {
     
     free(errMsg);
 
+    printf("Press any key to continue");
+    getchar();
+
     PylonTerminate();
     exit( EXIT_FAILURE );
 }
@@ -32,7 +35,7 @@ char *getFirstDevice(PYLON_DEVICE_HANDLE *hDev) {
     GENAPIC_RESULT res;
     
     // Number of devices
-    int numDevices;
+    size_t numDevices;
     
     res = PylonEnumerateDevices(&numDevices);
     CHECK(res);
@@ -160,7 +163,7 @@ void initializeDevice(PYLON_DEVICE_HANDLE hDev, int64_t *sizeX, int64_t *sizeY) 
     } else *sizeY = 0;
 }
 
-int getPayloadSize(PYLON_DEVICE_HANDLE hDev, int *payloadSize) {
+/*int getPayloadSize(PYLON_DEVICE_HANDLE hDev, int *payloadSize) {
     GENAPIC_RESULT res;
     
     PYLON_STREAMGRABBER_HANDLE hGrabber;
@@ -176,4 +179,4 @@ int getPayloadSize(PYLON_DEVICE_HANDLE hDev, int *payloadSize) {
     CHECK(res);
     
     return *payloadSize;
-}
+}*/

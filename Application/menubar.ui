@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+	<object id="menu" class="GtkHeaderBar">
+		<property name="title-widget">
+			<object class="GtkLabel">
+				<property name="label">Test</property>
+			</object>
+			<!--object class="GtkGrid">
+				<child><object class="GtkMenuButton">
+					<property name="label">Camera Settings</property>
+				</object></child>
+				<child><object class="GtkButton">
+					<property name="label">Save Settings</property>
+				</object></child>
+			</object-->
+		</property>
+	</object>
+</interface>
