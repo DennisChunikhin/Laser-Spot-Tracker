@@ -1,6 +1,7 @@
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <string.h>
+
 #include <gtk/gtk.h>
 #include <glib/gstdio.h>
 
@@ -45,6 +46,20 @@ static struct AppData appData = {.opened=false};
 
 // Execute at end of async camera thread
 static void camera_done(GObject *source_object, GAsyncResult *res, gpointer user_data) {
+	TaskData *task_data = & appData.workerThread->task_data;
+
+	// Clean up
+	if (task_data->open) {
+		fclose(task_data->fp);
+	}
+	
+	g_mutex_clear(task_data->lock);
+	g_object_unref(thread->task);
+
+	// Enable start/device selection buttons
+	gtk_widget_set_sensitive(appData.start_acquisition, TRUE);
+	gtk_widget_set_sensitive(appData.deviceDropdown, TRUE);
+
 	puts("Done");
 }
 
@@ -60,7 +75,9 @@ static void start_acquisition(GtkWidget *widget, gpointer data_) {
 		g_cancellable_reset(thread->cancellable);
 		thread->task = g_task_new(NULL, thread->cancellable, camera_done, NULL);
 
-		thread->task_data = (struct TaskData){appData.hDev, appData.img_window};
+		thread->task_data = (struct TaskData){.hDev=appData.hDev, .image_window=appData.img_window, .save=false};
+		thread->task_data.lock = (GMutex *)malloc(sizeof(GMutex));
+		g_mutex_init(thread->task_data.lock);
 		g_task_set_task_data(thread->task, &thread->task_data, NULL);
 
 		g_task_run_in_thread(thread->task, camera);
@@ -77,14 +94,31 @@ static void stop_acquisition(GtkWidget *widget, gpointer data_) {
 	struct WorkerThread *thread = appData.workerThread;
 
 	if (gtk_widget_is_sensitive(widget)) {
-		// Stop camera thread
-		g_cancellable_cancel(thread->cancellable);
-		g_object_unref(thread->task);
-
 		// Disable button
 		gtk_widget_set_sensitive(widget, FALSE);
-		gtk_widget_set_sensitive(appData.start_acquisition, TRUE);
-		gtk_widget_set_sensitive(appData.deviceDropdown, TRUE);
+
+		// Stop camera thread
+		g_cancellable_cancel(thread->cancellable);
+	}
+}
+
+// Stop/start save
+static void toggle_save(GtkWidget *widget, gpointer data_) {
+	if (gtk_widget_is_sensitive(widget)) {
+		struct TaskData *task_data = & appData.workerThread->task_data;
+
+		g_mutex_lock(task_data->lock);
+		if (task_data->save) {
+			// Stop save
+			task_data->save = false;
+			fclose(task_data->fp);
+		}
+		else {
+			// Start save
+			task_data->save = true;
+			task_data->fp = setupDataFile(); // TODO: Get file name from user, if not try default file path, and if not, dont turn on save.
+		}
+		g_mutex_unlock(task_data->lock);
 	}
 }
 

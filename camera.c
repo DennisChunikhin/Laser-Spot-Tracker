@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 #include <gtk/gtk.h>
 
@@ -128,7 +128,7 @@ void camera(GTask *task, gpointer source_obj, gpointer _task_data, GCancellable 
     //res = PylonImageWindowCreate(0, 0, 0, 1000, 1000);
     
     // Open Data File
-    FILE *dataFile = setupDataFile();
+    //FILE *dataFile = setupDataFile();
     
     // Grab images
     //for (int i=0; i < 100; i++) {
@@ -166,7 +166,10 @@ void camera(GTask *task, gpointer source_obj, gpointer _task_data, GCancellable 
             //printf("Frame %d; Brightest: (%4u, %4u); Mean: (%4.4f, %4.4f); Std: (%4.4f, %4.4f)\n", i, beamProps->xMax, beamProps->yMax, beamProps->xAvg, beamProps->yAvg, beamProps->xStd, beamProps->yStd);
             
             // Write Beam Data
-            writeData(dataFile, beamProps);
+	    g_mutex_lock(task_data->lock);
+	    if (task_data->save)
+            	writeData(task_data->fp, beamProps);
+	    g_mutex_unlock(task_data->lock);
             
 	    // Display Image
             res = PylonImageWindowDisplayImageGrabResult(0, &grabResult);
@@ -188,7 +191,7 @@ void camera(GTask *task, gpointer source_obj, gpointer _task_data, GCancellable 
     
     /* Clean up */
 
-    fclose(dataFile);
+    //fclose(dataFile);
     
     // Stop Grabbing Images
     res = PylonDeviceExecuteCommandFeature(hDev, "AcquisitionStop");

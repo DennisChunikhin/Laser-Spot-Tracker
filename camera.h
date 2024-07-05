@@ -10,6 +10,9 @@
 struct TaskData {
 	PYLON_DEVICE_HANDLE hDev;
 	GtkPicture *image_window;
+	_Bool save;
+	FILE *fp;
+	GMutex *lock;
 };
 
 
