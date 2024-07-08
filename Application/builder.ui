@@ -3,9 +3,27 @@
 	<object id="window" class="GtkWindow">
 		<property name="title">Camera Control</property>
 
-	
+		<!-- Menu Bar -->
+		<child><object id="menu" class="GtkHeaderBar">
+			<property name="title-widget">
+				<object class="GtkGrid">
+					<child><object class="GtkMenuButton">
+						<property name="label">Camera Settings</property>
+					</object></child>
+					<child><object class="GtkButton">
+						<property name="label">Save Settings</property>
+					</object></child>
+				</object>
+			</property>
+			<layout>
+				<property name="column">0</property>
+				<property name="row">0</property>
+				<property name="column-span">8</property>
+			</layout>
+		</object></child>
+
+		<!-- Body -->
 		<child><object id="grid" class="GtkGrid">
-			<!-- Body -->
 			<child><object id="cam_session_box" class="GtkBox">
 				<layout>
 					<property name="column">0</property>
@@ -14,12 +32,19 @@
 				</layout>
 			</object></child>
 
-			<child><object class="GtkLabel">
+			<child><object id="select_save_path" class="GtkButton">
+				<property name="label">Select Save Path</property>
+				<layout>
+					<property name="column">0</property>
+					<property name="row">2</property>
+				</layout>
+			</object></child>
+			<!--child><object class="GtkLabel">
 				<property name="label"></property>
 				<layout>
 					<property name="row">2</property>
 				</layout>
-			</object></child>
+			</object></child-->
 
 			<child><object id="start_acquisition" class="GtkButton">
 				<property name="label">Start Acquisition</property>
@@ -44,7 +69,7 @@
 			</object></child>
 
 			<!-- Image Display -->
-			<child><object id="img_window" class="GtkPicture">
+			<child><object id="img_window" class="GtkImage">
 				<layout>
 					<property name="column">5</property>
 					<property name="row">1</property>

@@ -10,14 +10,16 @@
 struct TaskData {
 	PYLON_DEVICE_HANDLE hDev;
 	GtkPicture *image_window;
+
 	_Bool save;
-	FILE *fp;
+	GFile *save_path;
+
 	GMutex *lock;
 };
 
 
-FILE *setupDataFile();
-void writeData(FILE *fp, const struct beamProperties *p);
+GOutputStream *setupDataFile(GFile *fpath);
+void writeData(GOutputStream *stream, const struct beamProperties *p);
 GBytes *mono8_to_rgb_bytes(unsigned char *data, int width, int height);
 
 void camera(GTask *task, gpointer source_obj, gpointer task_data, GCancellable *cancellable);

@@ -29,10 +29,13 @@ struct AppData {
 	struct WorkerThread *workerThread;
 	PYLON_DEVICE_HANDLE hDev;
 	_Bool opened;
+	GFile *save_path;
 
 	GtkWindow *window;
 	GtkWidget *start_acquisition;
 	GtkWidget *stop_acquisition;
+	GtkWidget *toggle_save;
+	GtkWidget *select_save_path;
 	GtkPicture *img_window;
 
 	char **deviceNames;
@@ -49,10 +52,6 @@ static void camera_done(GObject *source_object, GAsyncResult *res, gpointer user
 	TaskData *task_data = & appData.workerThread->task_data;
 
 	// Clean up
-	if (task_data->open) {
-		fclose(task_data->fp);
-	}
-	
 	g_mutex_clear(task_data->lock);
 	g_object_unref(thread->task);
 
@@ -75,7 +74,10 @@ static void start_acquisition(GtkWidget *widget, gpointer data_) {
 		g_cancellable_reset(thread->cancellable);
 		thread->task = g_task_new(NULL, thread->cancellable, camera_done, NULL);
 
-		thread->task_data = (struct TaskData){.hDev=appData.hDev, .image_window=appData.img_window, .save=false};
+		// Initialize thread data
+		thread->task_data = (struct TaskData){.hDev=appData.hDev, .image_window=appData.img_window, .save=false, .save_path=appData.save_path};
+
+		// Initialize lock
 		thread->task_data.lock = (GMutex *)malloc(sizeof(GMutex));
 		g_mutex_init(thread->task_data.lock);
 		g_task_set_task_data(thread->task, &thread->task_data, NULL);
@@ -86,6 +88,7 @@ static void start_acquisition(GtkWidget *widget, gpointer data_) {
 		gtk_widget_set_sensitive(widget, FALSE);
 		gtk_widget_set_sensitive(appData.stop_acquisition, TRUE);
 		gtk_widget_set_sensitive(appData.deviceDropdown, FALSE);
+		gtk_widget_set_sensitive(appData.toggle_save, TRUE);
 	}
 }
 
@@ -96,6 +99,8 @@ static void stop_acquisition(GtkWidget *widget, gpointer data_) {
 	if (gtk_widget_is_sensitive(widget)) {
 		// Disable button
 		gtk_widget_set_sensitive(widget, FALSE);
+		gtk_widget_set_sensitive(appData.toggle_save, FALSE);
+		gtk_button_set_label(appData.toggle_save, "Start Save");
 
 		// Stop camera thread
 		g_cancellable_cancel(thread->cancellable);
@@ -112,11 +117,17 @@ static void toggle_save(GtkWidget *widget, gpointer data_) {
 			// Stop save
 			task_data->save = false;
 			fclose(task_data->fp);
+			gtk_button_set_label(widget, "Start Save");
+
+			gtk_widget_set_sensitive(appData.select_save_path, TRUE);
 		}
 		else {
 			// Start save
+			gtk_widget_set_sensitive(appData.select_save_path, FALSE);
+
 			task_data->save = true;
-			task_data->fp = setupDataFile(); // TODO: Get file name from user, if not try default file path, and if not, dont turn on save.
+			task_data->fp = setupDataFile();
+			gtk_button_set_label(widget, "Stop Save");
 		}
 		g_mutex_unlock(task_data->lock);
 	}
@@ -169,7 +180,23 @@ static void select_camera(GtkWidget *widget, gpointer data_) {
 	}
 }
 
+// Save file path dialog callbacks
+static void save_path_dialog_response(GtkDialog *dialog, int response) {
+	if (response=GTK_RESPONSE_ACCEPT) {
+		GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
+		
+		g_object_unref(appData.save_path);
+		appData.save_path = gtk_file_chooser_get_file(chooser);
+	}
 
+	gtk_window_destroy(GTK_WINDOW(dialog));
+}
+
+static void save_path_dialog_callback(GtkWidget *widget, gpointer data) {
+	GtkWidget *dialog = gtk_file_chooser_dialog_new("Select Folder", appData.window, GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, "_Cancel", GTK_RESPONSE_CANCEL, "_Open", GTK_RESPONSE_ACCEPT, NULL);
+	gtk_window_present(GTK_WINDOW(dialog));
+	g_signal_connect(dialog, "response", G_CALLBACK( save_path_dialog_response ), NULL);
+}
 
 
 
@@ -183,10 +210,10 @@ static void activate(GtkApplication *app, gpointer data_) {
 	appData.window = window;
 
 	// Set menu bar
-	GtkBuilder *menu_builder = gtk_builder_new();
+	/*GtkBuilder *menu_builder = gtk_builder_new();
 	gtk_builder_add_from_file(menu_builder, "menubar.ui", NULL);
 	GObject *titlebar = gtk_builder_get_object(builder, "menu");
-	gtk_window_set_titlebar(GTK_WINDOW(window), titlebar);
+	gtk_window_set_titlebar(GTK_WINDOW(window), titlebar);*/
 
 	// Signal handlers
 	GObject *widget = gtk_builder_get_object(builder, "start_acquisition");
@@ -198,6 +225,14 @@ static void activate(GtkApplication *app, gpointer data_) {
 	g_signal_connect(widget, "clicked", G_CALLBACK(stop_acquisition), NULL);
 	gtk_widget_set_sensitive(widget, FALSE);
 	appData.stop_acquisition = widget;
+
+	widget = gtk_builder_get_object(builder, "save_btn");
+	g_signal_connect(widget, "clicked", G_CALLBACK(toggle_save), NULL);
+	appData.toggle_save = widget;
+
+	widget = gtk_builder_get_object(builder, "select_save_path");
+	g_signal_connect(widget, "clicked", G_CALLBACK(save_path_dialog_callback), NULL);
+	appData.select_save_path = widget;
 
 	//window = gtk_application_window_new(app);
 	//gtk_window_set_title(GTK_WINDOW(window), "Laser Tracker");
@@ -285,6 +320,9 @@ int main(int argc, char *argv[]) {
 
 	appData.workerThread = (struct WorkerThread *)malloc(sizeof(struct WorkerThread));
 	appData.workerThread->cancellable = g_cancellable_new();
+
+	// Default save filepath (current directory)
+	appData.save_path = g_file_new_for_path(".");
 
 	GtkApplication *app = gtk_application_new("org.gtk.example", G_APPLICATION_DEFAULT_FLAGS);
 	g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);

@@ -125,14 +125,10 @@ void camera(GTask *task, gpointer source_obj, gpointer _task_data, GCancellable 
     _Bool isReady;
     PylonGrabResult_t grabResult;
     
-    //res = PylonImageWindowCreate(0, 0, 0, 1000, 1000);
-    
     // Open Data File
-    //FILE *dataFile = setupDataFile();
+    GOutputStream *save_stream = setupDataFile(task_data->save_path);
     
     // Grab images
-    //for (int i=0; i < 100; i++) {
-    int i=0;
     while (!g_cancellable_is_cancelled(cancellable)) {
         size_t bufferIndex;
         
@@ -168,7 +164,7 @@ void camera(GTask *task, gpointer source_obj, gpointer _task_data, GCancellable 
             // Write Beam Data
 	    g_mutex_lock(task_data->lock);
 	    if (task_data->save)
-            	writeData(task_data->fp, beamProps);
+            	writeData(save_stream, beamProps);
 	    g_mutex_unlock(task_data->lock);
             
 	    // Display Image
@@ -191,7 +187,9 @@ void camera(GTask *task, gpointer source_obj, gpointer _task_data, GCancellable 
     
     /* Clean up */
 
-    //fclose(dataFile);
+    // Close save file
+    g_output_stream_close(save_stream, NULL, NULL);
+    g_object_unref(save_stream);
     
     // Stop Grabbing Images
     res = PylonDeviceExecuteCommandFeature(hDev, "AcquisitionStop");
@@ -236,7 +234,8 @@ void camera(GTask *task, gpointer source_obj, gpointer _task_data, GCancellable 
 }
 
 // Set up and open a file to store acquired data
-FILE *setupDataFile() {
+// TODO: Keep track of timestamp in data logging
+GOutputStream *setupDataFile(GFile *file_path) {
     // Set file name to current time
     time_t rawtime;
     struct tm *timeinfo;
@@ -244,41 +243,32 @@ FILE *setupDataFile() {
     time(&rawtime);
     timeinfo = localtime(&rawtime);
 
-    char fname[34] = "Data/";
+    char fname[29] = "";
     strcat(fname, asctime(timeinfo));
-    fname[18] = '-';
-    fname[21] = '-';
-    fname[29] = '.';
-    fname[30] = 't';
-    fname[31] = 'x';
-    fname[32] = 't';
-    fname[33] = '\0';
+    fname[13] = '-';
+    fname[16] = '-';
+    fname[24] = '.';
+    fname[25] = 't';
+    fname[26] = 'x';
+    fname[27] = 't';
+    fname[28] = '\0';
 
-    CreateDirectory("Data", NULL);
-
-    FILE *fp = fopen(fname, "a");
-    if (fp == NULL) {
-        fprintf(stderr, "Could not create a data file, exiting.");
-        exit(EXIT_FAILURE);
-    }
+    // Create data loggin file and get stream
+    GFile *save_file = g_file_get_child(file_path, fname);
+    GFileOutputStream *stream = g_file_append_to(save_file, G_FILE_CREATE_NONE, NULL, NULL);
 
     // Write Header
-    fprintf(fp, "xMax yMax xMean yMean xStd yStd\n");
+    g_output_stream_printf(G_OUTPUT_STREAM(stream), NULL, NULL, NULL, "xMax yMax xMean yMean xStd yStd\n");
+
+    g_object_unref(save_file);
     
-    return fp;
+    return G_OUTPUT_STREAM(stream);
 }
 
-void writeData(FILE *fp, const struct beamProperties *p) {
-    int res;
-
-    if( fprintf(fp, "%u %u %f %f %f %f\n", p->xMax, p->yMax, p->xAvg, p->yAvg, p->xStd, p->yStd) < 0 ) {
+void writeData(GOutputStream *stream, const struct beamProperties *p) {
+    if ( !g_output_stream_printf(stream, NULL, NULL, NULL, "%u %u %f %f %f %f\n", p->xMax, p->yMax, p->xAvg, p->yAvg, p->xStd, p->yStd) ) {
         // Failed Write
         fprintf(stderr, "Failed to write to write to data file, creating new data file.");
-
-        fclose(fp);
-        fp = setupDataFile(fp); // TODO: Check that this is fine
-
-        writeData(fp, p);
     }
 }
 
