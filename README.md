@@ -29,8 +29,8 @@ Clone this repository by running:
 
 Update the `PYLON_DEV_DIR` variable in [makefile](makefile) to the file path to the Development directory of Pylon (most likely `C:\Program Files\Basler\pylon 6\Development`).
 
-Navigate into the the directory with `cd Laser-Spot-Tracker`. Compile the executable by running `make` or `mingw32-make`. This places app.exe in the [Application](Application) directory.
+Navigate into the the directory with `cd Laser-Spot-Tracker`. Compile the executable by running `make` or `mingw32-make`. This places `app.exe` in the [Application](Application) directory.
 
-The dll files from `C:\Program Files\Basler\pylon 6\Runtime\Runtime\x64` or C:\Program Files\Basler\pylon 6\Runtime\Win32` (depending on your windows version--by default the makefile is set to compile for x64) must be copied into the same folder as `app.exe` so that the executable can run (see [Pylon Deployment Guide](https://docs.baslerweb.com/pylonapi/pylon-deployment-guide.html#locating-the-pylon-dlls)). Alternatively, the aforementioned file path can be added to the system PATH variable.
+The dll files from `C:\Program Files\Basler\pylon 6\Runtime\Runtime\x64` or `C:\Program Files\Basler\pylon 6\Runtime\Win32` (depending on your windows version--by default the makefile is set to compile for x64) must be copied into the same folder as `app.exe` so that the executable can run (see [Pylon Deployment Guide](https://docs.baslerweb.com/pylonapi/pylon-deployment-guide.html#locating-the-pylon-dlls)). Alternatively, the aforementioned file path can be added to the system PATH variable.
 
 The application can now be started by running `app.exe`
