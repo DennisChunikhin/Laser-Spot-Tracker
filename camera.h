@@ -11,6 +11,11 @@ struct TaskData {
 	PYLON_DEVICE_HANDLE hDev;
 	GtkPicture *image_window;
 
+	GtkLabel *x_centroid;
+	GtkLabel *y_centroid;
+	GtkLabel *x_std;
+	GtkLabel *y_std;
+
 	_Bool save;
 	GFile *save_path;
 

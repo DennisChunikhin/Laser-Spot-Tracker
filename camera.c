@@ -160,6 +160,20 @@ void camera(GTask *task, gpointer source_obj, gpointer _task_data, GCancellable 
             // Process Image
             getBeamProperties(buffer, sizeX, sizeY, beamProps);
             //printf("Frame %d; Brightest: (%4u, %4u); Mean: (%4.4f, %4.4f); Std: (%4.4f, %4.4f)\n", i, beamProps->xMax, beamProps->yMax, beamProps->xAvg, beamProps->yAvg, beamProps->xStd, beamProps->yStd);
+
+	    // Data Output
+	    char label_buf[8];
+	    sprintf(label_buf, "%5.1f", beamProps->xAvg);
+	    gtk_label_set_label(task_data->x_centroid, label_buf);
+            
+	    sprintf(label_buf, "%5.1f", beamProps->yAvg);
+	    gtk_label_set_label(task_data->y_centroid, label_buf);
+            
+	    sprintf(label_buf, "%5.1f", beamProps->xStd);
+	    gtk_label_set_label(task_data->x_std, label_buf);
+            
+	    sprintf(label_buf, "%5.1f", beamProps->yStd);
+	    gtk_label_set_label(task_data->y_std, label_buf);
             
             // Write Beam Data
 	    g_mutex_lock(task_data->lock);
@@ -176,7 +190,7 @@ void camera(GTask *task, gpointer source_obj, gpointer _task_data, GCancellable 
 	    gtk_picture_set_paintable(task_data->image_window, GDK_PAINTABLE(texture));
         }
         else if (grabResult.Status == Failed) {
-            fprintf(stderr, "Frame %d was not grabbed successfully. Error code = 0x%08X\n", i, grabResult.ErrorCode);
+            fprintf(stderr, "Frame was not grabbed successfully. Error code = 0x%08X\n", grabResult.ErrorCode);
         }
         
         // Requeue the buffer to be filled again

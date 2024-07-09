@@ -7,12 +7,12 @@
 		<child><object id="menu" class="GtkHeaderBar">
 			<property name="title-widget">
 				<object class="GtkGrid">
-					<child><object class="GtkMenuButton">
+					<!--child><object class="GtkMenuButton">
 						<property name="label">Camera Settings</property>
 					</object></child>
 					<child><object class="GtkButton">
 						<property name="label">Save Settings</property>
-					</object></child>
+					</object></child-->
 				</object>
 			</property>
 			<layout>
@@ -77,6 +77,104 @@
 					<property name="row-span">5</property>
 				</layout>
 			</object></child>
+
+
+			<!-- Data Output Fields -->
+			<child><object class="GtkLabel">
+				<property name="label">X: </property>
+				<layout>
+					<property name="column">0</property>
+					<property name="row">7</property>
+				</layout>
+			</object></child>
+			<child><object id="x_centroid" class="GtkLabel">
+				<layout>
+					<property name="column">1</property>
+					<property name="row">7</property>
+				</layout>
+			</object></child>
+
+			<child><object class="GtkLabel">
+				<property name="label">Y: </property>
+				<layout>
+					<property name="column">0</property>
+					<property name="row">8</property>
+				</layout>
+			</object></child>
+			<child><object id="y_centroid" class="GtkLabel">
+				<layout>
+					<property name="column">1</property>
+					<property name="row">8</property>
+				</layout>
+			</object></child>
+
+			<child><object class="GtkLabel">
+				<property name="label">Std X: </property>
+				<layout>
+					<property name="column">0</property>
+					<property name="row">10</property>
+				</layout>
+			</object></child>
+			<child><object id="x_std" class="GtkLabel">
+				<layout>
+					<property name="column">1</property>
+					<property name="row">10</property>
+				</layout>
+			</object></child>
+
+			<child><object class="GtkLabel">
+				<property name="label">Std Y: </property>
+				<layout>
+					<property name="column">0</property>
+					<property name="row">11</property>
+				</layout>
+			</object></child>
+			<child><object id="y_std" class="GtkLabel">
+				<layout>
+					<property name="column">1</property>
+					<property name="row">11</property>
+				</layout>
+			</object></child>
+
+
+			<!-- Camera Setting Input Fields -->
+			<child><object class="GtkLabel">
+				<property name="label">Camera Settings</property>
+				<attributes><attribute name="weight" value="PANGO_WEIGHT_BOLD"/></attributes>
+				<layout>
+					<property name="column">0</property>
+					<property name="row">13</property>
+				</layout>
+			</object></child>
+
+			<child><object class="GtkLabel">
+				<property name="label">Exposure Time: <property>
+				<layout>
+					<property name="column">0</property>
+					<property name="row">14</property>
+				</layout>
+			</object></child>
+			<child><object id="exp_time" class="GtkEntry">
+				<layout>
+					<property name="column">1</property>
+					<property name="row">14</property>
+				</layout>
+			</object></child>
+			
+			<child><object class="GtkLabel">
+				<property name="label">Gain: <property>
+				<layout>
+					<property name="column">0</property>
+					<property name="row">15</property>
+				</layout>
+			</object></child>
+			<child><object id="gain" class="GtkEntry">
+				<layout>
+					<property name="column">1</property>
+					<property name="row">15</property>
+				</layout>
+			</object></child>
+
 
 		</object></child>
 	</object>
