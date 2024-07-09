@@ -132,7 +132,6 @@ static void toggle_save(GtkWidget *widget, gpointer data_) {
 		if (task_data->save) {
 			// Stop save
 			task_data->save = false;
-			fclose(task_data->fp);
 			gtk_button_set_label(widget, "Start Save");
 
 			gtk_widget_set_sensitive(appData.select_save_path, TRUE);
@@ -142,7 +141,6 @@ static void toggle_save(GtkWidget *widget, gpointer data_) {
 			gtk_widget_set_sensitive(appData.select_save_path, FALSE);
 
 			task_data->save = true;
-			task_data->fp = setupDataFile();
 			gtk_button_set_label(widget, "Stop Save");
 		}
 		g_mutex_unlock(task_data->lock);
